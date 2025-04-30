@@ -2,6 +2,7 @@ import numpy as np
 import sns
 from matplotlib.colors import ListedColormap
 import pandas as pd
+from matplotlib.pyplot import xlabel
 from sklearn.datasets import load_iris, load_wine, load_breast_cancer
 from sklearn.model_selection import train_test_split
 
@@ -38,10 +39,25 @@ def plot_accuracy(train_scores, test_scores, param_range, xlabel, title):
 def plot_confusion(y_true, y_pred, title):
     cm = confusion_matrix(y_true, y_pred)
     plt.figure(figsize=(6, 5))
-    # sns.heatmap(cm, annot=True, fmt="d", cmap='Blues')
+    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
     plt.title(title)
+    plt.colorbar()
+
+    tick_marks = np.arange(len(np.unique(y_true)))
+    plt.xticks(tick_marks, tick_marks)
+    plt.yticks(tick_marks, tick_marks)
+
     plt.xlabel('Predicted')
     plt.ylabel('True')
+
+    thresh = cm.max() / 2.
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            plt.text(j, i, format(cm[i, j], 'd'),
+                     ha="center", va="center",
+                     color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
     plt.show()
 
 
@@ -61,7 +77,7 @@ def plot_decision_boundary(X, y, model, title):
     plt.figure(figsize=(8, 6))
     plt.contourf(xx, yy, Z, cmap=cmap, alpha=0.5)
     for label in np.unique(y):
-        #label = label.tointeger()
+        # label = label.tointeger()
         plt.scatter(X[y == label, 0], X[y == label, 1], color=colors[int(label)], edgecolor='k')
     # plt.legend()
     plt.title(title)
@@ -69,11 +85,11 @@ def plot_decision_boundary(X, y, model, title):
 
 
 def svm_experiment(X, y, kernel, i, j):
-    #scaler = StandardScaler()
-    #X = scaler.fit_transform(X)
+    # scaler = StandardScaler()
+    # X = scaler.fit_transform(X)
 
     C_values = np.arange(0.01, 11.0, 0.1)
-    #C_values = np.logspace(-2, 2, 10)
+    # C_values = np.logspace(-2, 2, 10)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, random_state=42)
 
@@ -95,18 +111,20 @@ def svm_experiment(X, y, kernel, i, j):
         test_scores.append(test_acc)
 
         if train_acc > best_acc:
-            print(best_acc, train_acc)
             best_acc = train_acc
             best_model = model
             best_C = C
-    #print(train_scores)
-    #plot_accuracy(train_scores, test_scores, C_values, 'C', f'SVM ({kernel}) - Accuracy vs C')
+    # print(train_scores)
+    # plot_accuracy(train_scores, test_scores, C_values, 'C', f'SVM ({kernel}) - Accuracy vs C')
 
-    plot_decision_boundary(X_train, y_train, best_model, f'Data: 2_{j}.csv | SVM ({kernel}) | Best C={best_C.round(3)} Accuracy={best_acc:.3f} - Train')
-    plot_decision_boundary(X_test, y_test, best_model, f'Data: 2_{j}.csv | SVM ({kernel}) | Best C={best_C.round(3)} Accuracy={best_acc:.3f} - Test')
+    plot_decision_boundary(X_train, y_train, best_model,
+                           f'Data: 2_{j}.csv | SVM ({kernel}) | Best C={best_C.round(3)} Accuracy={best_acc:.3f} - Train')
+    plot_decision_boundary(X_test, y_test, best_model,
+                           f'Data: 2_{j}.csv | SVM ({kernel}) | Best C={best_C.round(3)} Accuracy={best_acc:.3f} - Test')
 
     # y_pred = best_model.predict(X_test)
     # plot_confusion(y_test, y_pred, 'Confusion Matrix - Best SVM')
+
 
 def mlp_experiment(X, y, activation, i, j):
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, random_state=42)
@@ -138,14 +156,147 @@ def mlp_experiment(X, y, activation, i, j):
             best_model = model
             best_size = size
 
-    #plot_accuracy(train_scores, test_scores, hidden_layer_sizes_list, 'Hidden Layer Size', f'MLP ({activation}) - Accuracy vs Neurons')
+    # plot_accuracy(train_scores, test_scores, hidden_layer_sizes_list, 'Hidden Layer Size', f'MLP ({activation}) - Accuracy vs Neurons')
 
-    plot_decision_boundary(X_train, y_train, best_model, f'Data: 2_{j}.csv | MLP ({activation}) | Best size={best_size} Accuracy={best_acc:.3f} - Train')
-    plot_decision_boundary(X_test, y_test, best_model, f'Data: 2_{j}.csv | MLP ({activation}) | Best size={best_size} Accuracy={best_acc:.3f} - Test')
+    plot_decision_boundary(X_train, y_train, best_model,
+                           f'Data: 2_{j}.csv | MLP ({activation}) | Best size={best_size} Accuracy={best_acc:.3f} - Train')
+    plot_decision_boundary(X_test, y_test, best_model,
+                           f'Data: 2_{j}.csv | MLP ({activation}) | Best size={best_size} Accuracy={best_acc:.3f} - Test')
 
     # y_pred = best_model.predict(X_test)
     # plot_confusion(y_test, y_pred, 'Confusion Matrix - Best MLP')
 
+
+def knn_experiment(X, y, i, j):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, random_state=42)
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    train_scores = []
+    test_scores = []
+    models = []
+
+    best_acc = 0
+    best_model = None
+    best_n = 0
+
+    first_value = 1
+    last_value = 15
+    n_neighbors_list = np.arange(first_value, last_value, 1)
+    for n in n_neighbors_list:
+        model = KNeighborsClassifier(n_neighbors=n)
+        model.fit(X_train, y_train)
+
+        train_acc = model.score(X_train, y_train)
+        test_acc = model.score(X_test, y_test)
+
+        train_scores.append(train_acc)
+        test_scores.append(test_acc)
+        models.append(model)
+
+        if test_acc > best_acc:
+            best_acc = test_acc
+            best_model = model
+            best_n = n
+
+    plot_accuracy(train_scores, test_scores, n_neighbors_list, 'n_neighbors', f'Data: 2_{j}.csv | KNN')
+
+    # data: train
+    plot_decision_boundary(X_train, y_train, models[0], f'Data: 2_{j}.csv | KNN | n_neighbors={first_value} | Train')
+    y_pred = models[0].predict(X_train)
+    plot_confusion(y_train, y_pred, f'Data: 2_{j}.csv | KNN | n_neighbors={first_value} | Train')
+
+    plot_decision_boundary(X_train, y_train, best_model, f'KNN | n_neighbors={best_n} | Train')
+    y_pred = best_model.predict(X_train)
+    plot_confusion(y_train, y_pred, f'Data: 2_{j}.csv | KNN | n_neighbors={best_n} | Train')
+
+    plot_decision_boundary(X_train, y_train, models[-1],
+                           f'Data: 2_{j}.csv | KNN | n_neighbors={last_value - 1} | Train')
+    y_pred = models[-1].predict(X_train)
+    plot_confusion(y_train, y_pred, f'Data: 2_{j}.csv | KNN | n_neighbors={last_value - 1} | Train')
+
+    # data: test
+    plot_decision_boundary(X_test, y_test, models[0], f'Data: 2_{j}.csv | KNN | n_neighbors={first_value} | Test')
+    y_pred = models[0].predict(X_test)
+    plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | KNN | n_neighbors={first_value} | Test')
+
+    plot_decision_boundary(X_test, y_test, best_model, f'Data: 2_{j}.csv | KNN | n_neighbors={best_n} | Test')
+    y_pred = best_model.predict(X_test)
+    plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | KNN | n_neighbors={best_n} | Test')
+
+    plot_decision_boundary(X_test, y_test, models[-1],
+                           f'Data: 2_{j}.csv | KNN | n_neighbors={last_value - 1} | Test')
+    y_pred = models[-1].predict(X_test)
+    plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | KNN | n_neighbors={last_value - 1} | Test')
+
+
+def page2(X, y, i, j):
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, random_state=42)
+
+    train_scores = []
+    test_scores = []
+    models = []
+
+    best_acc = 0
+    best_model = None
+    best_C = 0
+
+    C_values = np.logspace(-2, 2, 10)
+    first_value = C_values[0]
+    last_value = C_values[-1]
+    #C_values = np.arange(first_value, last_value, 0.1)
+    for C in C_values:
+        model = SVC(C=C, kernel='linear')
+        model.fit(X_train, y_train)
+
+        train_acc = model.score(X_train, y_train)
+        test_acc = model.score(X_test, y_test)
+
+        train_scores.append(train_acc)
+        test_scores.append(test_acc)
+        models.append(model)
+
+        if train_acc > best_acc:
+            best_acc = train_acc
+            best_model = model
+            best_C = C
+##################################3333
+    x_label='log(C)'
+    info = 'SVC | C'
+    plot_accuracy(train_scores, test_scores, C_values, x_label, f'Data: 2_{j}.csv | SVC')
+
+    # data: train
+    plot_decision_boundary(X_train, y_train, models[0], f'Data: 2_{j}.csv | KNN | n_neighbors={first_value} | Train')
+    y_pred = models[0].predict(X_train)
+    plot_confusion(y_train, y_pred, f'Data: 2_{j}.csv | {info}={first_value} | Train')
+
+    plot_decision_boundary(X_train, y_train, best_model, f'Data: 2_{j}.csv {info}={best_C} | Train')
+    y_pred = best_model.predict(X_train)
+    plot_confusion(y_train, y_pred, f'Data: 2_{j}.csv | {info}={best_C} | Train')
+
+    plot_decision_boundary(X_train, y_train, models[-1],
+                           f'Data: 2_{j}.csv | {info}={last_value - 1} | Train')
+    y_pred = models[-1].predict(X_train)
+    plot_confusion(y_train, y_pred, f'Data: 2_{j}.csv | {info}={last_value - 1} | Train')
+
+    # data: test
+    plot_decision_boundary(X_test, y_test, models[0], f'Data: 2_{j}.csv | {info}={first_value} | Test')
+    y_pred = models[0].predict(X_test)
+    plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | {info}={first_value} | Test')
+
+    plot_decision_boundary(X_test, y_test, best_model, f'Data: 2_{j}.csv | {info}s={best_C} | Test')
+    y_pred = best_model.predict(X_test)
+    plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | K{info}={best_C} | Test')
+
+    plot_decision_boundary(X_test, y_test, models[-1],
+                           f'Data: 2_{j}.csv | {info}={last_value - 1} | Test')
+    y_pred = models[-1].predict(X_test)
+    plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | {info}={last_value - 1} | Test')
 
 if __name__ == "__main__":
     # Eksperymenty sztuczne
@@ -154,5 +305,10 @@ if __name__ == "__main__":
             X, y_true = load(f'data/2_{j}.csv')
             # svm_experiment(X, y_true, 'linear', 2, j)
             # svm_experiment(X, y_true, 'rbf', 2, j)
-            mlp_experiment(X, y_true, 'identity', i, j)
-            mlp_experiment(X, y_true, 'relu', i, j)
+            # mlp_experiment(X, y_true, 'identity', i, j)
+            # mlp_experiment(X, y_true, 'relu', i, j)
+
+        for j in range(2, 4):
+            X, y_true = load(f'data/2_{j}.csv')
+            #knn_experiment(X, y_true, i, j)
+            page2(X, y_true, i, j)
