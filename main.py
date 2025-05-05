@@ -170,8 +170,12 @@ def mlp_experiment(X, y, activation, i, j):
     # plot_confusion(y_test, y_pred, 'Confusion Matrix - Best MLP')
 
 
-def page_2_knn(X, y, i, j):
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, random_state=42)
+def page_2_knn(X, y, experiment, j):
+    if experiment == 1:
+        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, test_size=0.2, random_state=42)
+    else:
+        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.2, test_size=0.2, random_state=42)
+
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
@@ -210,7 +214,7 @@ def page_2_knn(X, y, i, j):
     y_pred = models[0].predict(X_train)
     plot_confusion(y_train, y_pred, f'Data: 2_{j}.csv | KNN | n_neighbors={first_value} | Train')
 
-    plot_decision_boundary(X_train, y_train, best_model, f'KNN | n_neighbors={best_n} | Train')
+    plot_decision_boundary(X_train, y_train, best_model, f'Data: 2_{j}.csv | KNN | n_neighbors={best_n} | Train')
     y_pred = best_model.predict(X_train)
     plot_confusion(y_train, y_pred, f'Data: 2_{j}.csv | KNN | n_neighbors={best_n} | Train')
 
@@ -234,11 +238,15 @@ def page_2_knn(X, y, i, j):
     plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | KNN | n_neighbors={last_value - 1} | Test')
 
 
-def page_3_svm(X, y, i, j):
-    scaler = StandardScaler()
-    X = scaler.fit_transform(X)
+def page_3_svm(X, y, experiment, j):
+    if experiment == 1:
+        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, test_size=0.2, random_state=42)
+    else:
+        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.2, test_size=0.2, random_state=42)
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, random_state=42)
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
 
     train_scores = []
     test_scores = []
@@ -306,8 +314,12 @@ def page_3_svm(X, y, i, j):
     y_pred = models[-1].predict(X_test)
     plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | {info}={last_value} | Test')
 
-def page_4_mlp(X, y, i, j):
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, random_state=42)
+def page_4_mlp(X, y, experiment, j):
+    if experiment == 1:
+        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, test_size=0.2, random_state=42)
+    else:
+        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.2, test_size=0.2, random_state=42)
+
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
@@ -324,7 +336,7 @@ def page_4_mlp(X, y, i, j):
     hidden_layer_sizes_list = np.arange(2, 64, 4)
     for size in hidden_layer_sizes_list:
         model = MLPClassifier(hidden_layer_sizes=(size,), activation='relu', max_iter=1000, solver='sgd', tol=0,
-                              n_iter_no_change=1000)
+                              n_iter_no_change=100000)
         model.fit(X_train, y_train)
 
         train_acc = model.score(X_train, y_train)
@@ -378,11 +390,9 @@ def page_4_mlp(X, y, i, j):
 
 
 if __name__ == "__main__":
-    # Eksperymenty sztuczne
     for i in range(2, 3):
         for j in range(1, 4):
             X, y_true = load(f'data/2_{j}.csv')
-            # strona 1
             # svm_experiment(X, y_true, 'linear', 2, j)
             # svm_experiment(X, y_true, 'rbf', 2, j)
             # mlp_experiment(X, y_true, 'identity', i, j)
@@ -390,6 +400,10 @@ if __name__ == "__main__":
 
         for j in range(2, 4):
             X, y_true = load(f'data/2_{j}.csv')
-            #page_2_knn(X, y_true, i, j) #strona 2
-            #page_3_svm(X, y_true, i, j)
-            page_4_mlp(X, y_true, i, j)
+            # page_2_knn(X, y_true, 1, j)
+            # page_3_svm(X, y_true, 1, j)
+            # page_4_mlp(X, y_true, 1, j)
+
+            page_2_knn(X, y_true, 2, j)
+            page_3_svm(X, y_true, 2, j)
+            page_4_mlp(X, y_true, 2, j)
