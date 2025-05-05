@@ -3,6 +3,7 @@ import sns
 from matplotlib.colors import ListedColormap
 import pandas as pd
 from matplotlib.pyplot import xlabel
+from numpy.ma.core import identity
 from sklearn.datasets import load_iris, load_wine, load_breast_cancer
 from sklearn.model_selection import train_test_split
 
@@ -265,8 +266,8 @@ def page_3_svm(X, y, i, j):
         test_scores.append(test_acc)
         models.append(model)
 
-        if train_acc > best_acc:
-            best_acc = train_acc
+        if test_acc > best_acc:
+            best_acc = test_acc
             best_model = model
             best_C = C
     ##################################3333
@@ -305,6 +306,76 @@ def page_3_svm(X, y, i, j):
     y_pred = models[-1].predict(X_test)
     plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | {info}={last_value} | Test')
 
+def page_4_mlp(X, y, i, j):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, random_state=42)
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    train_scores = []
+    test_scores = []
+    models = []
+
+    best_acc = 0
+    best_model = None
+    best_size = 0
+
+    hidden_layer_sizes_list = [1, 3, 5, 10, 20, 50, 100]
+    hidden_layer_sizes_list = np.arange(2, 64, 4)
+    for size in hidden_layer_sizes_list:
+        model = MLPClassifier(hidden_layer_sizes=(size,), activation='relu', max_iter=1000, solver='sgd', tol=0,
+                              n_iter_no_change=1000)
+        model.fit(X_train, y_train)
+
+        train_acc = model.score(X_train, y_train)
+        test_acc = model.score(X_test, y_test)
+
+        train_scores.append(train_acc)
+        test_scores.append(test_acc)
+        models.append(model)
+
+        if test_acc > best_acc:
+            best_acc = test_acc
+            best_model = model
+            best_size = size
+
+        # plot_decision_boundary(X_train, y_train, best_model,
+        #                        f'Data: 2_{j}.csv | MLP | Best size={best_size} Accuracy={best_acc:.3f} - Train')
+        # plot_decision_boundary(X_test, y_test, best_model,
+        #                        f'Data: 2_{j}.csv | MLP ({activation}) | Best size={best_size} Accuracy={best_acc:.3f} - Test')
+
+    x_label = 'hidden_layer_size'
+    info = 'MLP | neurons'
+    plot_accuracy(train_scores, test_scores, hidden_layer_sizes_list, x_label, f'Data: 2_{j}.csv | MLP')
+
+    # data: train
+    plot_decision_boundary(X_train, y_train, models[0], f'Data: 2_{j}.csv | MLP | neurons={hidden_layer_sizes_list[0]} | Train')
+    y_pred = models[0].predict(X_train)
+    plot_confusion(y_train, y_pred, f'Data: 2_{j}.csv | {info}={hidden_layer_sizes_list[0]} | Train')
+
+    plot_decision_boundary(X_train, y_train, best_model, f'Data: 2_{j}.csv {info}={best_size} | Train')
+    y_pred = best_model.predict(X_train)
+    plot_confusion(y_train, y_pred, f'Data: 2_{j}.csv | {info}={best_size} | Train')
+
+    plot_decision_boundary(X_train, y_train, models[-1],
+                           f'Data: 2_{j}.csv | {info}={hidden_layer_sizes_list[-1]} | Train')
+    y_pred = models[-1].predict(X_train)
+    plot_confusion(y_train, y_pred, f'Data: 2_{j}.csv | {info}={hidden_layer_sizes_list[-1]} | Train')
+
+    # data: test
+    plot_decision_boundary(X_test, y_test, models[0], f'Data: 2_{j}.csv | {info}={hidden_layer_sizes_list[0]} | Test')
+    y_pred = models[0].predict(X_test)
+    plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | {info}={hidden_layer_sizes_list[0]} | Test')
+
+    plot_decision_boundary(X_test, y_test, best_model, f'Data: 2_{j}.csv | {info}={best_size} | Test')
+    y_pred = best_model.predict(X_test)
+    plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | K{info}={best_size} | Test')
+
+    plot_decision_boundary(X_test, y_test, models[-1],
+                           f'Data: 2_{j}.csv | {info}={hidden_layer_sizes_list[-1]} | Test')
+    y_pred = models[-1].predict(X_test)
+    plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | {info}={hidden_layer_sizes_list[-1]} | Test')
+
 
 if __name__ == "__main__":
     # Eksperymenty sztuczne
@@ -321,3 +392,4 @@ if __name__ == "__main__":
             X, y_true = load(f'data/2_{j}.csv')
             #page_2_knn(X, y_true, i, j) #strona 2
             #page_3_svm(X, y_true, i, j)
+            page_4_mlp(X, y_true, i, j)
