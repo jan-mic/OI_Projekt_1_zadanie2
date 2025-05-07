@@ -16,7 +16,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, confusion_matrix
 
 import matplotlib.pyplot as plt
+import copy
 
+best_neurons_0_8 = None
+best_neurons_0_2 = None
 
 def load(path):
     data = np.genfromtxt(path, delimiter=';')
@@ -31,9 +34,11 @@ def plot_accuracy(train_scores, test_scores, param_range, xlabel, title):
     plt.plot(param_range, test_scores, label='Test Accuracy')
     plt.xlabel(xlabel)
     plt.ylabel('Accuracy')
+    plt.ylim(0, 1.05)
     plt.title(title)
-    for param in param_range:
-        plt.axvline(x=param, color='gray', linestyle='--', alpha=0.5)
+    if xlabel != 'epochs':
+        for param in param_range:
+            plt.axvline(x=param, color='gray', linestyle='--', alpha=0.5)
     plt.legend()
     #plt.grid()
     plt.show()
@@ -87,7 +92,7 @@ def plot_decision_boundary(X, y, model, title):
     plt.show()
 
 
-def svm_experiment(X, y, kernel, i, j):
+def experiment_1_svm(X, y, kernel, i, j):
     # scaler = StandardScaler()
     # X = scaler.fit_transform(X)
 
@@ -129,7 +134,7 @@ def svm_experiment(X, y, kernel, i, j):
     # plot_confusion(y_test, y_pred, 'Confusion Matrix - Best SVM')
 
 
-def mlp_experiment(X, y, activation, i, j):
+def experiment_1_mlp(X, y, activation, j):
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, random_state=42)
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
@@ -144,8 +149,8 @@ def mlp_experiment(X, y, activation, i, j):
 
     hidden_layer_sizes_list = [1, 3, 5, 10, 20, 50, 100]
     for size in hidden_layer_sizes_list:
-        model = MLPClassifier(hidden_layer_sizes=(size,), activation=activation, max_iter=1000, solver='sgd', tol=0,
-                              n_iter_no_change=1000)
+        model = MLPClassifier(hidden_layer_sizes=(size,), activation=activation, max_iter=100000, solver='sgd', tol=0,
+                              n_iter_no_change=100000)
         model.fit(X_train, y_train)
 
         train_acc = model.score(X_train, y_train)
@@ -170,7 +175,7 @@ def mlp_experiment(X, y, activation, i, j):
     # plot_confusion(y_test, y_pred, 'Confusion Matrix - Best MLP')
 
 
-def page_2_knn(X, y, experiment, j):
+def experiment_2_and_3_knn(X, y, experiment, j):
     if experiment == 1:
         X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, test_size=0.2, random_state=42)
     else:
@@ -238,7 +243,7 @@ def page_2_knn(X, y, experiment, j):
     plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | KNN | n_neighbors={last_value - 1} | Test')
 
 
-def page_3_svm(X, y, experiment, j):
+def experiment_2_and_3_svm(X, y, experiment, j):
     if experiment == 1:
         X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, test_size=0.2, random_state=42)
     else:
@@ -314,7 +319,7 @@ def page_3_svm(X, y, experiment, j):
     y_pred = models[-1].predict(X_test)
     plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | {info}={last_value} | Test')
 
-def page_4_mlp(X, y, experiment, j):
+def experiment_2_and_3_mlp(X, y, experiment, j):
     if experiment == 1:
         X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, test_size=0.2, random_state=42)
     else:
@@ -335,7 +340,7 @@ def page_4_mlp(X, y, experiment, j):
     hidden_layer_sizes_list = [1, 3, 5, 10, 20, 50, 100]
     hidden_layer_sizes_list = np.arange(2, 64, 4)
     for size in hidden_layer_sizes_list:
-        model = MLPClassifier(hidden_layer_sizes=(size,), activation='relu', max_iter=1000, solver='sgd', tol=0,
+        model = MLPClassifier(hidden_layer_sizes=(size,), activation='relu', max_iter=100000, solver='sgd', tol=0,
                               n_iter_no_change=100000)
         model.fit(X_train, y_train)
 
@@ -355,6 +360,11 @@ def page_4_mlp(X, y, experiment, j):
         #                        f'Data: 2_{j}.csv | MLP | Best size={best_size} Accuracy={best_acc:.3f} - Train')
         # plot_decision_boundary(X_test, y_test, best_model,
         #                        f'Data: 2_{j}.csv | MLP ({activation}) | Best size={best_size} Accuracy={best_acc:.3f} - Test')
+
+    if experiment == 1:
+        best_neurons_0_8= best_size
+    else:
+        best_neurons_0_2 = best_size
 
     x_label = 'hidden_layer_size'
     info = 'MLP | neurons'
@@ -388,22 +398,138 @@ def page_4_mlp(X, y, experiment, j):
     y_pred = models[-1].predict(X_test)
     plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | {info}={hidden_layer_sizes_list[-1]} | Test')
 
+def experiment_4_mlp(X, y, experiment, j, random_state, iteration):
+    if experiment == 1:
+        #train_size = 0.8
+        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, test_size=0.2, random_state=random_state)
+        hidden_layer_size = (best_neurons_0_8,)
+        #hidden_layer_size = (6,)
+    else:
+        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.2, test_size=0.2, random_state=random_state)
+        #train_size = 0.2
+        hidden_layer_size = (best_neurons_0_2,)
+        #hidden_layer_size = (6,)
+
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    train_scores = []
+    test_scores = []
+    models = []
+
+    best_acc = 0
+    train_acc_for_best_test_acc = 0
+    best_model = None
+    best_epoch = 0
+    first_epoch_model = None
+    last_epoch_model = None
+
+
+    model = MLPClassifier(hidden_layer_sizes=hidden_layer_size, activation='relu', max_iter=1, solver='sgd', tol=0,
+                              n_iter_no_change=1, warm_start=True)
+
+    first_epoch = 1
+    last_epoch = 100000
+    epochs= range(first_epoch, last_epoch + 1)
+    classes = np.unique(y)
+    for epoch in epochs:
+        model.partial_fit(X_train, y_train, classes=classes)
+
+        train_acc = accuracy_score(y_train, model.predict(X_train))
+        test_acc = accuracy_score(y_test, model.predict(X_test))
+
+        # train_acc = model.score(X_train, y_train)
+        # test_acc = model.score(X_test, y_test)
+
+        train_scores.append(train_acc)
+        test_scores.append(test_acc)
+
+        if epoch == first_epoch:
+            first_epoch_model = copy.deepcopy(model)
+
+        if epoch == last_epoch:
+            last_epoch_model = copy.deepcopy(model)
+
+        if test_acc > best_acc:
+            best_acc = test_acc
+            train_acc_for_best_test_acc = train_acc
+            best_model = copy.deepcopy(model)
+            best_epoch = epoch
+
+        # plot_decision_boundary(X_train, y_train, best_model,copy.deepcopy(model)copy.deepcopy(model)
+        #                        f'Data: 2_{j}.csv | MLP | Best size={best_size} Accuracy={best_acc:.3f} - Train')
+        # plot_decision_boundary(X_test, y_test, best_model,
+        #                        f'Data: 2_{j}.csv | MLP ({activation}) | Best size={best_size} Accuracy={best_acc:.3f} - Test')
+
+
+    if random_state == 42:
+        x_label = 'epochs'
+        info = 'MLP | epoch'
+        plot_accuracy(train_scores, test_scores, epochs, x_label, f'Data: 2_{j}.csv | MLP')
+
+        # data: train
+        plot_decision_boundary(X_train, y_train, first_epoch_model, f'Data: 2_{j}.csv | MLP | epoch={epochs[0]} | Train')
+        #y_pred = models[0].predict(X_train)
+        #plot_confusion(y_train, y_pred, f'Data: 2_{j}.csv | {info}={epochs[0]} | Train')
+
+        plot_decision_boundary(X_train, y_train, best_model, f'Data: 2_{j}.csv {info}={best_epoch} | Train')
+        # y_pred = best_model.predict(X_train)
+        # plot_confusion(y_train, y_pred, f'Data: 2_{j}.csv | {info}={best_size} | Train')
+
+        plot_decision_boundary(X_train, y_train, last_epoch_model,
+                               f'Data: 2_{j}.csv | {info}={epochs[-1]} | Train')
+        # y_pred = models[-1].predict(X_train)
+        # plot_confusion(y_train, y_pred, f'Data: 2_{j}.csv | {info}={epochs[-1]} | Train')
+
+        # data: test
+        plot_decision_boundary(X_test, y_test, first_epoch_model, f'Data: 2_{j}.csv | {info}={epochs[0]} | Test')
+        # y_pred = models[0].predict(X_test)
+        # plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | {info}={epochs[0]} | Test')
+
+        plot_decision_boundary(X_test, y_test, best_model, f'Data: 2_{j}.csv | {info}={best_epoch} | Test')
+        # y_pred = best_model.predict(X_test)
+        # plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | K{info}={best_size} | Test')
+
+        plot_decision_boundary(X_test, y_test, last_epoch_model,
+                               f'Data: 2_{j}.csv | {info}={epochs[-1]} | Test')
+        # y_pred = models[-1].predict(X_test)
+        # plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | {info}={epochs[-1]} | Test')
+    else:
+        print(f'\niteration: {iteration} | experiment: {experiment} | random_state: {random_state}')
+        print('\ntrain accuracies: ')
+        print(f'first epoch: {train_scores[0]}')
+        print(f'best epoch ({best_epoch}): {train_acc_for_best_test_acc}')
+        print(f'last epoch: {train_scores[-1]}')
+        print('\ntest accuracies: ')
+        print(f'first epoch: {test_scores[0]}')
+        print(f'best epoch ({best_epoch}): {best_acc}')
+        print(f'last epoch: {test_scores[-1]}')
+        print('======================================================')
+
 
 if __name__ == "__main__":
-    for i in range(2, 3):
-        for j in range(1, 4):
-            X, y_true = load(f'data/2_{j}.csv')
-            # svm_experiment(X, y_true, 'linear', 2, j)
-            # svm_experiment(X, y_true, 'rbf', 2, j)
-            # mlp_experiment(X, y_true, 'identity', i, j)
-            # mlp_experiment(X, y_true, 'relu', i, j)
+    for j in range(1, 4):
+        X, y_true = load(f'data/2_{j}.csv')
+        # experiment_1_svm(X, y_true, 'linear', 2, j)
+        # experiment_1_svm(X, y_true, 'rbf', 2, j)
+        # experiment_1_mlp(X, y_true, 'identity', j)
+        # experiment_1_mlp(X, y_true, 'relu', j)
+    for j in range(2, 4):
+        X, y_true = load(f'data/2_{j}.csv')
+        # experiment_2_and_3_knn(X, y_true, 1, j)
+        # experiment_2_and_3_svm(X, y_true, 1, j)
+        # experiment_2_and_3_mlp(X, y_true, 1, j)
+        # experiment_2_and_3_knn(X, y_true, 2, j)
+        # experiment_2_and_3_svm(X, y_true, 2, j)
+        # experiment_2_and_3_mlp(X, y_true, 2, j)
 
-        for j in range(2, 4):
-            X, y_true = load(f'data/2_{j}.csv')
-            # page_2_knn(X, y_true, 1, j)
-            # page_3_svm(X, y_true, 1, j)
-            # page_4_mlp(X, y_true, 1, j)
+    X, y_true = load(f'data/2_3.csv')
+    experiment_4_mlp(X, y_true, 1, 3, 42, 0)
+    experiment_4_mlp(X, y_true, 2, 3, 42, 0)
 
-            page_2_knn(X, y_true, 2, j)
-            page_3_svm(X, y_true, 2, j)
-            page_4_mlp(X, y_true, 2, j)
+    random_states = np.random.randint(0, 200, size=10)
+    for i in range(10):
+        experiment_4_mlp(X, y_true, 1, 3, random_states[i], i + 1)
+    for i in range(10):
+        experiment_4_mlp(X, y_true, 2, 3, random_states[i], i + 1)
