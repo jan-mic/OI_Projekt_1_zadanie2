@@ -161,7 +161,7 @@ def experiment_1_mlp(X, y, activation, j):
 
 def experiment_2_and_3_knn(X, y, experiment, j):
     if experiment == 1:
-        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, test_size=0.2, random_state=44)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, test_size=0.2, random_state=42)
     else:
         X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.2, test_size=0.2, random_state=42)
 
@@ -450,10 +450,12 @@ def experiment_4_mlp(X, y, experiment, j, random_state, iteration):
             best_epoch = epoch
 
     x_label = 'epochs'
-    plot_accuracy(train_scores, test_scores, epochs, x_label, f'Data: 2_{j}.csv | MLP')
+    if iteration != 0:
+        plot_accuracy(train_scores, test_scores, epochs, x_label, f'Data: 2_{j}.csv | MLP | iteration={iteration}')
 
     if iteration == 0:
         info = 'MLP | epoch'
+        plot_accuracy(train_scores, test_scores, epochs, x_label, f'Data: 2_{j}.csv | MLP')
 
         # data: train
         plot_decision_boundary(X_train, y_train, first_epoch_model,
