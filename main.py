@@ -20,6 +20,8 @@ import copy
 
 best_neurons_0_8 = None
 best_neurons_0_2 = None
+max_iter = 100000
+jd =1
 
 def load(path):
     data = np.genfromtxt(path, delimiter=';')
@@ -96,10 +98,12 @@ def experiment_1_svm(X, y, kernel, i, j):
     # scaler = StandardScaler()
     # X = scaler.fit_transform(X)
 
-    C_values = np.arange(0.01, 11.0, 0.1)
     # C_values = np.logspace(-2, 2, 10)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, random_state=42)
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
 
     train_scores = []
     test_scores = []
@@ -108,6 +112,14 @@ def experiment_1_svm(X, y, kernel, i, j):
     best_model = None
     best_C = 0
 
+    ##################################################################33
+    start_value = -2
+    stop_value = 6
+    num_values = stop_value - start_value + 1
+    C_values = np.logspace(start_value, stop_value, num_values)
+    ##################################################################33
+
+    #C_values = np.arange(0.01, 11.0, 0.1)
     for C in C_values:
         model = SVC(C=C, kernel=kernel)
         model.fit(X_train, y_train)
@@ -147,10 +159,11 @@ def experiment_1_mlp(X, y, activation, j):
     best_model = None
     best_size = 0
 
-    hidden_layer_sizes_list = [1, 3, 5, 10, 20, 50, 100]
+    #hidden_layer_sizes_list = [1, 3, 5, 10, 20, 50, 100]
+    hidden_layer_sizes_list = np.arange(2, 64, 4)
     for size in hidden_layer_sizes_list:
-        model = MLPClassifier(hidden_layer_sizes=(size,), activation=activation, max_iter=100000, solver='sgd', tol=0,
-                              n_iter_no_change=100000)
+        model = MLPClassifier(hidden_layer_sizes=(size,), activation=activation, max_iter=max_iter, solver='sgd', tol=0,
+                              n_iter_no_change=max_iter)
         model.fit(X_train, y_train)
 
         train_acc = model.score(X_train, y_train)
@@ -167,9 +180,9 @@ def experiment_1_mlp(X, y, activation, j):
     # plot_accuracy(train_scores, test_scores, hidden_layer_sizes_list, 'Hidden Layer Size', f'MLP ({activation}) - Accuracy vs Neurons')
 
     plot_decision_boundary(X_train, y_train, best_model,
-                           f'Data: 2_{j}.csv | MLP ({activation}) | Best size={best_size} Accuracy={best_acc:.3f} - Train')
+                           f'Data: 2_{j}.csv | MLP ({activation}) | neurons={best_size} (best) Accuracy={best_acc:.3f} - Train')
     plot_decision_boundary(X_test, y_test, best_model,
-                           f'Data: 2_{j}.csv | MLP ({activation}) | Best size={best_size} Accuracy={best_acc:.3f} - Test')
+                           f'Data: 2_{j}.csv | MLP ({activation}) | neurons={best_size} (best)best Accuracy={best_acc:.3f} - Test')
 
     # y_pred = best_model.predict(X_test)
     # plot_confusion(y_test, y_pred, 'Confusion Matrix - Best MLP')
@@ -312,7 +325,7 @@ def experiment_2_and_3_svm(X, y, experiment, j):
 
     plot_decision_boundary(X_test, y_test, best_model, f'Data: 2_{j}.csv | {info}={best_C} | Test')
     y_pred = best_model.predict(X_test)
-    plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | K{info}={best_C} | Test')
+    plot_confusion(y_test, y_pred, f'Data: 2_{j}.csv | {info}={best_C} | Test')
 
     plot_decision_boundary(X_test, y_test, models[-1],
                            f'Data: 2_{j}.csv | {info}={last_value} | Test')
@@ -337,11 +350,11 @@ def experiment_2_and_3_mlp(X, y, experiment, j):
     best_model = None
     best_size = 0
 
-    hidden_layer_sizes_list = [1, 3, 5, 10, 20, 50, 100]
+    #hidden_layer_sizes_list = [1, 3, 5, 10, 20, 50, 100]
     hidden_layer_sizes_list = np.arange(2, 64, 4)
     for size in hidden_layer_sizes_list:
-        model = MLPClassifier(hidden_layer_sizes=(size,), activation='relu', max_iter=100000, solver='sgd', tol=0,
-                              n_iter_no_change=100000)
+        model = MLPClassifier(hidden_layer_sizes=(size,), activation='relu', max_iter=max_iter, solver='sgd', tol=0,
+                              n_iter_no_change=max_iter)
         model.fit(X_train, y_train)
 
         train_acc = model.score(X_train, y_train)
@@ -361,8 +374,9 @@ def experiment_2_and_3_mlp(X, y, experiment, j):
         # plot_decision_boundary(X_test, y_test, best_model,
         #                        f'Data: 2_{j}.csv | MLP ({activation}) | Best size={best_size} Accuracy={best_acc:.3f} - Test')
 
+    global best_neurons_0_8, best_neurons_0_2
     if experiment == 1:
-        best_neurons_0_8= best_size
+        best_neurons_0_8 = best_size
     else:
         best_neurons_0_2 = best_size
 
@@ -418,6 +432,8 @@ def experiment_4_mlp(X, y, experiment, j, random_state, iteration):
     test_scores = []
     models = []
 
+    print(f'AAAAAAAAAAAAAAAAAAAAAAAAAAAAa{hidden_layer_size}')
+
     best_acc = 0
     train_acc_for_best_test_acc = 0
     best_model = None
@@ -430,7 +446,7 @@ def experiment_4_mlp(X, y, experiment, j, random_state, iteration):
                               n_iter_no_change=1, warm_start=True)
 
     first_epoch = 1
-    last_epoch = 100000
+    last_epoch = max_iter
     epochs= range(first_epoch, last_epoch + 1)
     classes = np.unique(y)
     for epoch in epochs:
@@ -511,18 +527,18 @@ def experiment_4_mlp(X, y, experiment, j, random_state, iteration):
 if __name__ == "__main__":
     for j in range(1, 4):
         X, y_true = load(f'data/2_{j}.csv')
-        # experiment_1_svm(X, y_true, 'linear', 2, j)
-        # experiment_1_svm(X, y_true, 'rbf', 2, j)
-        # experiment_1_mlp(X, y_true, 'identity', j)
-        # experiment_1_mlp(X, y_true, 'relu', j)
+        experiment_1_svm(X, y_true, 'linear', 2, j)
+        experiment_1_svm(X, y_true, 'rbf', 2, j)
+        experiment_1_mlp(X, y_true, 'identity', j)
+        experiment_1_mlp(X, y_true, 'relu', j)
     for j in range(2, 4):
         X, y_true = load(f'data/2_{j}.csv')
-        # experiment_2_and_3_knn(X, y_true, 1, j)
-        # experiment_2_and_3_svm(X, y_true, 1, j)
-        # experiment_2_and_3_mlp(X, y_true, 1, j)
-        # experiment_2_and_3_knn(X, y_true, 2, j)
-        # experiment_2_and_3_svm(X, y_true, 2, j)
-        # experiment_2_and_3_mlp(X, y_true, 2, j)
+        experiment_2_and_3_knn(X, y_true, 1, j)
+        experiment_2_and_3_svm(X, y_true, 1, j)
+        experiment_2_and_3_mlp(X, y_true, 1, j)
+        experiment_2_and_3_knn(X, y_true, 2, j)
+        experiment_2_and_3_svm(X, y_true, 2, j)
+        experiment_2_and_3_mlp(X, y_true, 2, j)
 
     X, y_true = load(f'data/2_3.csv')
     experiment_4_mlp(X, y_true, 1, 3, 42, 0)
