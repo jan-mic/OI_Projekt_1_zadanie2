@@ -449,10 +449,11 @@ def experiment_4_mlp(X, y, experiment, j, random_state, iteration):
             best_model = copy.deepcopy(model)
             best_epoch = epoch
 
-    if random_state == 42:
-        x_label = 'epochs'
+    x_label = 'epochs'
+    plot_accuracy(train_scores, test_scores, epochs, x_label, f'Data: 2_{j}.csv | MLP')
+
+    if iteration == 0:
         info = 'MLP | epoch'
-        plot_accuracy(train_scores, test_scores, epochs, x_label, f'Data: 2_{j}.csv | MLP')
 
         # data: train
         plot_decision_boundary(X_train, y_train, first_epoch_model,
