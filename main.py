@@ -6,13 +6,13 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import copy
 
 best_neurons_0_8 = None
 best_neurons_0_2 = None
-max_iter = 10000
+max_iter = 100000
 
 
 def load(path):
@@ -34,7 +34,6 @@ def plot_accuracy(train_scores, test_scores, param_range, xlabel, title):
         for param in param_range:
             plt.axvline(x=param, color='gray', linestyle='--', alpha=0.5)
     plt.legend()
-    # plt.grid()
     plt.show()
 
 
